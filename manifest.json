@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/chrome-manifest",
+  "name": "Infine Trading",
+  "version": "1.0",
+  "manifest_version": 3,
+  "minimum_chrome_version": "120",
+  "description": "Infinte Craft Trading Extension",
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://neal.fun/infinite-craft/*"
+      ],
+      "js": [
+        "dist/client/client.js"
+      ]
+    }
+  ],
+  "host_permissions": [
+    "https://neal.fun/*"
+  ]
+}
