@@ -1,10 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/chrome-manifest",
-  "name": "Infine Trading",
+  "name": "Infine Racing",
   "version": "1.0",
   "manifest_version": 3,
   "minimum_chrome_version": "120",
-  "description": "Infinte Craft Trading Extension",
+  "description": "Infinte Craft Racing Extension",
   "permissions": [
     "storage",
     "scripting"
@@ -16,6 +16,9 @@
       ],
       "js": [
         "dist/client/client.js"
+      ],
+      "css": [
+        "dist/client/index.css"
       ]
     }
   ],
