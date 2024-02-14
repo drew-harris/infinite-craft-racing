@@ -1,8 +1,12 @@
 import "./index.css";
 import { render } from "solid-js/web";
 import App from "./App";
-import { getItemsFromLocalStorage, setItemStore } from "./itemStore";
-import { getGameMode } from "./gameMode";
+import {
+  getItemsFromLocalStorage,
+  saveBackupItems,
+  setItemStore,
+} from "./itemStore";
+import { exitRacingMode, getGameMode } from "./gameMode";
 
 // Setup listener for new item discoveries
 
@@ -11,10 +15,10 @@ function checkForChanges() {
   // React to changes in localStorage
   const items = getItemsFromLocalStorage();
   setItemStore(items);
+  if (getGameMode() === "normal") {
+    saveBackupItems();
+  }
 }
-
-// Initially set the item store
-setItemStore(getItemsFromLocalStorage());
 
 // Observe changes in the DOM
 const observer = new MutationObserver(checkForChanges);
@@ -35,4 +39,15 @@ sidebar[0].prepend(root);
 const gamemode = getGameMode();
 
 // Render the app
-render(() => <App gamemode={gamemode} />, root!);
+const cleanup = render(() => <App gamemode={gamemode} />, root!);
+
+// Cleanup
+window.addEventListener("beforeunload", () => {
+  if (window.localStorage.getItem("loadstopper")) {
+    window.localStorage.removeItem("loadstopper");
+  } else {
+    exitRacingMode();
+    observer.disconnect();
+    cleanup();
+  }
+});
