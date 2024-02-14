@@ -1,28 +1,26 @@
-import { createContext, createSignal, onMount } from "solid-js";
-import { Button } from "./components/Button";
-import { exitRacingMode } from "./gameMode";
-import { useNetwork } from "./network";
+import { Show, createContext, createSignal, onMount } from "solid-js";
 import { z } from "zod";
-import { defaultGameState, gameStateSchema } from "./messageAndStateSchema";
 import { Game } from "./Game";
+import { Button } from "./components/Button";
+import { Input } from "./input";
+import { defaultGameState, gameStateSchema } from "./messageAndStateSchema";
+import { useNetwork } from "./network";
 import { hideSidebar } from "./sidebar";
+import { Divider } from "./Divider";
 
 type GameContextFormat = {
   gameState: z.infer<typeof gameStateSchema>;
   updateGameState: ReturnType<typeof useNetwork>["updateGameState"];
+  isHost: ReturnType<typeof useNetwork>["isHost"];
 };
 
 const GameContext = createContext<GameContextFormat>({
   gameState: defaultGameState,
   updateGameState: () => undefined,
+  isHost: () => false,
 });
 
 export const Lobby = () => {
-  const stopPlaying = () => {
-    exitRacingMode();
-    window.location.reload();
-  };
-
   const network = useNetwork();
 
   const [input, setInput] = createSignal("");
@@ -35,31 +33,38 @@ export const Lobby = () => {
     hideSidebar(); // TODO:  make this happen sooner
   });
 
-  if (network.isConnected()) {
-    return (
-      <GameContext.Provider
-        value={{
-          gameState: network.gameStore,
-          updateGameState: network.updateGameState,
-        }}
-      >
-        <Game />
-      </GameContext.Provider>
-    );
-  }
+  const game = (
+    <GameContext.Provider
+      value={{
+        gameState: network.gameStore,
+        updateGameState: network.updateGameState,
+        isHost: network.isHost,
+      }}
+    >
+      <Game />
+    </GameContext.Provider>
+  );
 
   return (
-    <div class="p-3 pb-0">
-      <div>Playing game!!!</div>
-      <div>{network.hostingId}</div>
-      <input
-        value={input()}
-        onChange={(e) => {
-          setInput(e.target.value);
-        }}
-      />
-      <button onclick={join}>JOIN</button>
-      <Button onclick={stopPlaying}>Stop playing</Button>
-    </div>
+    <Show when={!network.isConnected()} fallback={game}>
+      <div class="p-3 pb-0">
+        {JSON.stringify(network.isConnected())}
+        <div class="text-center">Ask players to join with: </div>
+        <div class="text-center text-xl font-bold">{network.hostingId}</div>
+        <Divider label="Or" />
+        <div class="flex gap-2">
+          <Input
+            class="flex-grow"
+            value={input()}
+            placeholder="Enter code to join"
+            onChange={(e) => {
+              setInput(e.target.value);
+            }}
+          />
+          <Button onclick={join}>Join</Button>
+        </div>
+        <div class="text-red-500">{network.connectErrorMessage()}</div>
+      </div>
+    </Show>
   );
 };

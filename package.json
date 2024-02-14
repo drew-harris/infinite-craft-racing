@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "clsx": "^2.1.0",
     "nanoid": "^5.0.5",
     "peerjs": "^1.5.2",
     "solid-js": "^1.8.14",
+    "tailwind-merge": "^2.2.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {

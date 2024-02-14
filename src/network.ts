@@ -1,4 +1,4 @@
-import { nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
 import Peer, { DataConnection } from "peerjs";
 import { createSignal } from "solid-js";
 import { z } from "zod";
@@ -9,14 +9,21 @@ import {
 } from "./messageAndStateSchema";
 import { createStore } from "solid-js/store";
 
+const customAlph = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
 export const useNetwork = () => {
-  const hostingId = nanoid(4).toUpperCase();
+  const hostingId = customAlph(5);
   const [isConnected, setIsconnected] = createSignal(false);
+  const [isHost, setIsHost] = createSignal(false);
 
   const hostPeer = new Peer("infrace-" + hostingId);
   const clientPeer = new Peer();
 
   const connections: DataConnection[] = [];
+
+  const [connectErrorMessage, setConnectErrorMessage] = createSignal<
+    string | null
+  >();
 
   const [gameStore, updateGameStore] =
     createStore<z.infer<typeof gameStateSchema>>(defaultGameState);
@@ -43,6 +50,7 @@ export const useNetwork = () => {
   };
 
   hostPeer.on("connection", (conn) => {
+    setIsHost(true);
     console.log("Connection established");
     setIsconnected(true);
     connections.push(conn);
@@ -67,7 +75,23 @@ export const useNetwork = () => {
 
   console.log("setup host handler");
 
+  clientPeer.on("error", (e) => {
+    if (e.type === "peer-unavailable") {
+      setConnectErrorMessage("Invalid Game ID");
+    } else {
+      setConnectErrorMessage("Could not connect");
+    }
+  });
+
   const connectToHostAsClient = (code: string) => {
+    if (code === hostingId) {
+      setConnectErrorMessage("You cannot join your own game");
+      return;
+    }
+    if (code === "") {
+      setConnectErrorMessage("Please enter a game ID");
+      return;
+    }
     console.log("connecting to host");
     try {
       const conn = clientPeer.connect("infrace-" + code);
@@ -87,6 +111,7 @@ export const useNetwork = () => {
         });
       });
     } catch (err) {
+      setConnectErrorMessage("Could not connect");
       console.error(err);
     }
   };
@@ -116,5 +141,7 @@ export const useNetwork = () => {
     connectToHostAsClient,
     gameStore,
     updateGameState,
+    connectErrorMessage,
+    isHost,
   };
 };
