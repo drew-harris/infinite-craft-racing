@@ -73,8 +73,6 @@ export const useNetwork = () => {
     });
   });
 
-  console.log("setup host handler");
-
   clientPeer.on("error", (e) => {
     if (e.type === "peer-unavailable") {
       setConnectErrorMessage("Invalid Game ID");
@@ -96,11 +94,9 @@ export const useNetwork = () => {
     try {
       const conn = clientPeer.connect("infrace-" + code);
       conn.on("open", () => {
-        console.log("open");
         connections.push(conn);
         setIsconnected(true);
         conn.on("data", (data) => {
-          console.log("client got data");
           const jsoned = JSON.parse(data as string);
           const result = stateUpdateMessageSchema.safeParse(jsoned);
           if (!result.success) {
@@ -114,6 +110,12 @@ export const useNetwork = () => {
       setConnectErrorMessage("Could not connect");
       console.error(err);
     }
+
+    // Try to reconnect if connection is lost
+    clientPeer.on("disconnected", () => {
+      console.log("Reconnecting");
+      clientPeer.reconnect();
+    });
   };
 
   const sendData = (
