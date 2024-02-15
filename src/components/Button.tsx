@@ -1,6 +1,6 @@
 import { JSX, JSXElement } from "solid-js";
 
-interface ButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
   children: JSXElement;
 }
 

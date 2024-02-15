@@ -1,15 +1,17 @@
-import { customAlphabet } from "nanoid";
+import { customAlphabet, nanoid } from "nanoid";
 import Peer, { DataConnection } from "peerjs";
 import { createSignal } from "solid-js";
+import { SetStoreFunction, createStore } from "solid-js/store";
 import { z } from "zod";
 import {
   defaultGameState,
   gameStateSchema,
   stateUpdateMessageSchema,
 } from "./messageAndStateSchema";
-import { createStore } from "solid-js/store";
 
 const customAlph = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+const myId = nanoid(8);
 
 export const useNetwork = () => {
   const hostingId = customAlph(5);
@@ -44,8 +46,6 @@ export const useNetwork = () => {
       }
     });
 
-    console.log("Received data", data);
-
     updateGameStore(data);
   };
 
@@ -67,10 +67,6 @@ export const useNetwork = () => {
       }
       handleData(conn.peer, result.data.payload);
     });
-
-    conn.on("open", () => {
-      console.log("open from host");
-    });
   });
 
   clientPeer.on("error", (e) => {
@@ -90,7 +86,6 @@ export const useNetwork = () => {
       setConnectErrorMessage("Please enter a game ID");
       return;
     }
-    console.log("connecting to host");
     try {
       const conn = clientPeer.connect("infrace-" + code);
       conn.on("open", () => {
@@ -132,9 +127,11 @@ export const useNetwork = () => {
     });
   };
 
-  const updateGameState = (data: z.infer<typeof gameStateSchema>) => {
-    updateGameStore(data);
-    sendData(data);
+  const updateGameState: SetStoreFunction<z.infer<typeof gameStateSchema>> = (
+    ...args: any
+  ) => {
+    updateGameStore(args);
+    sendData(gameStore);
   };
 
   return {

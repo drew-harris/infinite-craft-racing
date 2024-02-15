@@ -1,11 +1,9 @@
 import { createSignal } from "solid-js";
 import { getGameMode } from "./gameMode";
+import { z } from "zod";
+import { itemSchema } from "./messageAndStateSchema";
 
-export type GameItem = {
-  text: string;
-  emoji: string;
-  discovered: boolean;
-};
+export type GameItem = z.infer<typeof itemSchema>;
 
 const defaultItems = [
   { text: "Water", emoji: "💧", discovered: false },
