@@ -1,4 +1,4 @@
-import { customAlphabet, nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
 import Peer, { DataConnection } from "peerjs";
 import { createSignal } from "solid-js";
 import { SetStoreFunction, createStore } from "solid-js/store";
@@ -6,12 +6,14 @@ import { z } from "zod";
 import {
   defaultGameState,
   gameStateSchema,
-  stateUpdateMessageSchema,
+  playerStoreSchema,
+  stateUpdateMessage,
 } from "./messageAndStateSchema";
+import { playerName } from "./playerName";
 
 const customAlph = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
-const myId = nanoid(8);
+const myPlayerId = customAlph(5);
 
 export const useNetwork = () => {
   const hostingId = customAlph(5);
@@ -30,23 +32,15 @@ export const useNetwork = () => {
   const [gameStore, updateGameStore] =
     createStore<z.infer<typeof gameStateSchema>>(defaultGameState);
 
-  const handleData = (
-    senderId: string,
-    data: z.infer<typeof gameStateSchema>,
-  ) => {
-    // Send data to all connections
-    connections.forEach((conn) => {
-      console.log("Sending data", data, senderId, conn.peer);
-      if (conn.peer !== senderId) {
-        const payload = {
-          type: "state",
-          payload: data,
-        };
-        conn.send(JSON.stringify(payload));
-      }
-    });
+  const [playerStore, updatePlayerStores] = createStore<
+    z.infer<typeof playerStoreSchema>
+  >({
+    [myPlayerId]: { name: playerName() || "" },
+  });
 
-    updateGameStore(data);
+  const handleData = (data: unknown) => {
+    // Send data to all connections
+    const jsoned = JSON.parse(data as string);
   };
 
   hostPeer.on("connection", (conn) => {
@@ -55,17 +49,20 @@ export const useNetwork = () => {
     setIsconnected(true);
     connections.push(conn);
 
-    sendData(gameStore);
+    // TODO: On init, to get player up to speed
 
     conn.on("data", (data) => {
+      connections.forEach((connection) => {
+        if (connection.peer !== conn.peer) {
+          const payload = {
+            type: "state",
+            payload: data,
+          };
+          connection.send(JSON.stringify(payload));
+        }
+      });
+      handleData(data);
       console.log("Host got data");
-      const jsoned = JSON.parse(data as string);
-      const result = stateUpdateMessageSchema.safeParse(jsoned);
-      if (!result.success) {
-        console.error("Invalid data received", result.error);
-        return;
-      }
-      handleData(conn.peer, result.data.payload);
     });
   });
 
@@ -92,13 +89,7 @@ export const useNetwork = () => {
         connections.push(conn);
         setIsconnected(true);
         conn.on("data", (data) => {
-          const jsoned = JSON.parse(data as string);
-          const result = stateUpdateMessageSchema.safeParse(jsoned);
-          if (!result.success) {
-            console.error("Invalid data received", result.error);
-            return;
-          }
-          handleData(conn.peer, result.data.payload);
+          handleData(data);
         });
       });
     } catch (err) {
@@ -113,8 +104,8 @@ export const useNetwork = () => {
     });
   };
 
-  const sendData = (
-    data: z.infer<typeof stateUpdateMessageSchema>["payload"],
+  const sendGameStoreData = (
+    data: z.infer<typeof stateUpdateMessage>["payload"],
   ) => {
     const payload = {
       type: "state",
@@ -131,7 +122,7 @@ export const useNetwork = () => {
     ...args: any
   ) => {
     updateGameStore(args);
-    sendData(gameStore);
+    sendGameStoreData(gameStore);
   };
 
   return {

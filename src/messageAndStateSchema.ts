@@ -7,7 +7,6 @@ export const itemSchema = z.object({
 });
 
 export const defaultGameState: z.infer<typeof gameStateSchema> = {
-  players: {},
   betting: {
     enabled: false,
     betAmount: 0,
@@ -22,8 +21,15 @@ const playerDataSchema = z.object({
   latestItem: itemSchema.optional(),
 });
 
+export const playerStoreSchema = z.record(playerDataSchema);
+
+export const playerStateMessage = z.object({
+  type: z.literal("playerstate"),
+  payload: playerStoreSchema,
+  playerId: z.string(),
+});
+
 export const gameStateSchema = z.object({
-  players: z.record(playerDataSchema),
   betting: z.object({
     enabled: z.boolean(),
     betAmount: z.number().optional(),
@@ -33,7 +39,7 @@ export const gameStateSchema = z.object({
   targetWord: z.string(),
 });
 
-export const stateUpdateMessageSchema = z.object({
-  type: z.string(),
+export const stateUpdateMessage = z.object({
+  type: z.literal("gamestate"),
   payload: gameStateSchema,
 });

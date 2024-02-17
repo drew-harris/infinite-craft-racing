@@ -69,7 +69,6 @@ export const Lobby = () => {
               value={input().toUpperCase()}
               placeholder="Enter code to join"
               oninput={(e) => {
-                console.log("setting value to ", e.target.value.toUpperCase());
                 setInput(e.target.value.toUpperCase());
               }}
             />
